@@ -37,8 +37,19 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+];
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow configured origins and any Vercel preview deployments
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 
@@ -72,24 +83,37 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Initialize DB and start server
-const startServer = async () => {
+const initDb = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Database connected successfully');
     
     await sequelize.sync({ alter: true });
     console.log('✅ Database synchronized');
+  } catch (err) {
+    console.error('❌ Database initialization failed:', err.message);
+    throw err;
+  }
+};
 
+// In Vercel serverless, we don't call listen().
+// DB init happens on first request (cold start).
+if (!process.env.VERCEL) {
+  initDb().then(() => {
     app.listen(PORT, () => {
       console.log(`🚗 VSM Server running on http://localhost:${PORT}`);
       console.log(`📚 Environment: ${process.env.NODE_ENV}`);
     });
-  } catch (err) {
+  }).catch((err) => {
     console.error('❌ Failed to start server:', err.message);
     process.exit(1);
-  }
-};
-
-startServer();
+  });
+} else {
+  // For Vercel: init DB but don't listen
+  initDb().catch((err) => {
+    console.error('❌ Vercel DB init failed:', err.message);
+  });
+}
 
 module.exports = app;
+
