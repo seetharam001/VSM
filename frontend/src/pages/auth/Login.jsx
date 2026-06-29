@@ -74,13 +74,6 @@ export default function Login() {
           <Link to="/register" style={{ color: 'var(--primary-light)', fontWeight: 600 }}>Create account</Link>
         </div>
 
-        <hr className="divider" style={{ margin: '20px 0' }} />
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          <strong style={{ color: 'var(--text-secondary)' }}>Demo credentials:</strong><br/>
-          Admin: admin@vsm.com / Admin@123<br/>
-          Customer: john@example.com / Customer@123<br/>
-          Mechanic: ravi@vsm.com / Mechanic@123
-        </div>
       </div>
     </div>
   );
