@@ -101,19 +101,25 @@ const getMonthlyReport = async (req, res, next) => {
     const sequelize = require('../config/database');
     const { QueryTypes } = require('sequelize');
 
+    const isSQLite = sequelize.options.dialect === 'sqlite';
+
+    const monthFormat = isSQLite ? "strftime('%Y-%m', createdAt)" : "DATE_FORMAT(createdAt, '%Y-%m')";
+    const dateLimit = isSQLite ? "date('now', '-12 months')" : "DATE_SUB(NOW(), INTERVAL 12 MONTH)";
+    const invMonthFormat = isSQLite ? "strftime('%Y-%m', i.createdAt)" : "DATE_FORMAT(i.createdAt, '%Y-%m')";
+
     const bookingData = await sequelize.query(
-      `SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as total, status
+      `SELECT ${monthFormat} as month, COUNT(*) as total, status
        FROM bookings
-       WHERE createdAt >= date('now', '-12 months')
+       WHERE createdAt >= ${dateLimit}
        GROUP BY month, status
        ORDER BY month ASC`,
       { type: QueryTypes.SELECT }
     );
 
     const revenueData = await sequelize.query(
-      `SELECT strftime('%Y-%m', i.createdAt) as month, SUM(i.grandTotal) as revenue
+      `SELECT ${invMonthFormat} as month, SUM(i.grandTotal) as revenue
        FROM invoices i
-       WHERE i.paymentStatus = 'Paid' AND i.createdAt >= date('now', '-12 months')
+       WHERE i.paymentStatus = 'Paid' AND i.createdAt >= ${dateLimit}
        GROUP BY month
        ORDER BY month ASC`,
       { type: QueryTypes.SELECT }
