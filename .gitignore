@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.sqlite
+uploads/avatars/*
+uploads/vehicles/*
+!uploads/avatars/.gitkeep
+!uploads/vehicles/.gitkeep
+dist/
+.DS_Store
+Thumbs.db
+*.log
